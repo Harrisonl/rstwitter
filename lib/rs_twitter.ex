@@ -88,6 +88,7 @@ defmodule RsTwitter do
   """
 
   @twitter_url "https://api.twitter.com/1.1/"
+  @twitter_url_v2 "https://api.twitter.com/2/"
 
   @doc """
   Makes request to twitter API
@@ -135,6 +136,7 @@ defmodule RsTwitter do
   defp handle_response({:ok, response = %HTTPoison.Response{}}) do
     %{status_code: status_code, body: body, headers: headers} = response
     body = Poison.decode!(body)
+
     if status_code == 200 do
       {:ok, %RsTwitter.Response{status_code: status_code, body: body, headers: headers}}
     else
@@ -146,10 +148,26 @@ defmodule RsTwitter do
     {:error, reason}
   end
 
-  defp build_url(request = %RsTwitter.Request{}) do
-    url = @twitter_url <> request.endpoint <> ".json"
+  defp build_url(%RsTwitter.Request{endpoint: endpoint, version: "2"} = req) do
+    @twitter_url_v2
+    |> Kernel.<>(endpoint)
+    |> add_query_params(req)
+  end
 
-    query_string = URI.encode_query(request.parameters)
-    if query_string == "", do: url, else: url <> "?#{query_string}"
+  defp build_url(%RsTwitter.Request{endpoint: endpoint, version: "1.1"} = req) do
+    @twitter_url
+    |> Kernel.<>("#{endpoint}.json")
+    |> add_query_params(req)
+  end
+
+  defp add_query_params(base_url, %RsTwitter.Request{parameters: nil}), do: base_url
+
+  defp add_query_params(base_url, %RsTwitter.Request{parameters: params}) do
+    params
+    |> URI.encode_query()
+    |> case do
+      "" -> base_url
+      query_string -> "#{base_url}?#{query_string}"
+    end
   end
 end
