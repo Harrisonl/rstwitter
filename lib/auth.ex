@@ -4,7 +4,13 @@ defmodule RsTwitter.Auth do
   @doc """
   Append Authorization header when user credentials are not provided
   """
-  @spec append_authorization_header(list(), atom(), String.t(), [], RsTwitter.Credentials.t() | nil) :: list()
+  @spec append_authorization_header(
+          list(),
+          atom(),
+          String.t(),
+          [],
+          RsTwitter.Credentials.t() | nil
+        ) :: list()
   def append_authorization_header(headers, method, url, body, user_credentials)
       when is_nil(user_credentials) do
     {consumer_key, consumer_secret} = fetch_consumer_credentials()
@@ -20,6 +26,20 @@ defmodule RsTwitter.Auth do
 
     {header, _req_params} = OAuther.header(params)
     headers ++ [header]
+  end
+
+  @doc """
+  Append Authorization header when bearer token provided
+  """
+  def append_authorization_header(
+        headers,
+        _method,
+        _url,
+        _body,
+        %Credentials{bearer_token: bearer_token}
+      )
+      when is_binary(bearer_token) do
+    headers ++ [{"Authorization", "Bearer #{bearer_token}"}]
   end
 
   @doc """
