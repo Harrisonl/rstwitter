@@ -13,7 +13,7 @@ defmodule RsTwitter.Auth do
         ) :: list()
   def append_authorization_header(headers, method, url, body, user_credentials)
       when is_nil(user_credentials) do
-    {consumer_key, consumer_secret} = fetch_consumer_credentials()
+    {consumer_key, consumer_secret} = fetch_consumer_credentials(nil)
 
     creds =
       OAuther.credentials(
@@ -46,7 +46,7 @@ defmodule RsTwitter.Auth do
   Append Authorization header when user credentials are provided
   """
   def append_authorization_header(headers, method, url, body, user_credentials = %Credentials{}) do
-    {consumer_key, consumer_secret} = fetch_consumer_credentials()
+    {consumer_key, consumer_secret} = fetch_consumer_credentials(user_credentials)
 
     creds =
       OAuther.credentials(
@@ -63,7 +63,14 @@ defmodule RsTwitter.Auth do
     headers ++ [header]
   end
 
-  defp fetch_consumer_credentials() do
+  defp fetch_consumer_credentials(%Credentials{
+         consumer_key: consumer_key,
+         consumer_secret: consumer_secret
+       })
+       when is_binary(consumer_secret) and is_binary(consumer_key),
+       do: {consumer_key, consumer_secret}
+
+  defp fetch_consumer_credentials(_) do
     consumer_key = Application.get_env(:rs_twitter, :consumer_key)
 
     if !consumer_key do
